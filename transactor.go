@@ -39,7 +39,7 @@ func UpdateKeyedTransactor(transactor *bind.TransactOpts, backend *backends.Simu
 }
 
 /*
-GetKeyedTransactor gets a keyed (signed?) transctor do perform a transaction within the Rinkeby Ethereum Blockchain
+GetKeyedTransactor gets a keyed (signed?) transctor do perform a transaction within the Ethereum Blockchain
 */
 func GetKeyedTransactor(client *ethclient.Client, increaseNonceFactor int) (transactor *bind.TransactOpts, err error) {
 	err = nil
