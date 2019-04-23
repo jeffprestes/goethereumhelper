@@ -46,26 +46,26 @@ func GetKeyedTransactor(client *ethclient.Client, increaseNonceFactor int) (tran
 
 	pvtkey, err := crypto.HexToECDSA(os.Getenv("privatekey"))
 	if err != nil {
-		log.Printf("[GetKeyedTransactor] Houve falha ao gerar a chave privada: %+v", err)
+		log.Printf("[GetKeyedTransactor] Failue generating private key ECDSA: %+v", err)
 		return
 	}
 	pubkey := pvtkey.Public()
 	pubkeyECDSA, ok := pubkey.(*ecdsa.PublicKey)
 	if !ok {
-		err = errors.New("[GetKeyedTransactor] Houve falha fazer o casting da chave publica para o padrão ECDSA")
+		err = errors.New("[GetKeyedTransactor] Failure obtaining (casting) ECDSA public key")
 		log.Printf(err.Error())
 		return
 	}
 	basicNonce, err := GetNonceNumber(client, *pubkeyECDSA)
 	if err != nil {
-		log.Printf("[GetKeyedTransactor] Houve falha ao obter o nonce da rede: %+v", err)
+		log.Printf("[GetKeyedTransactor] Failure when get nonce from the network: %+v", err)
 		return
 	}
 	nonce := basicNonce + uint64(increaseNonceFactor)
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
-		log.Printf("[GetKeyedTransactor] Houve falha ao obter o preco sugerido de gas da rede: %+v", err)
+		log.Printf("[GetKeyedTransactor] Failure getting gas price: %+v", err)
 		return
 	}
 
