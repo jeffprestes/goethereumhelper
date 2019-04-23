@@ -39,9 +39,9 @@ func UpdateKeyedTransactor(transactor *bind.TransactOpts, backend *backends.Simu
 }
 
 /*
-GetKeyedTransactorRinkeby gets a keyed (signed?) transctor do perform a transaction within the Rinkeby Ethereum Blockchain
+GetKeyedTransactor gets a keyed (signed?) transctor do perform a transaction within the Rinkeby Ethereum Blockchain
 */
-func GetKeyedTransactorRinkeby(client *ethclient.Client, increaseNonceFactor int) (transactor *bind.TransactOpts, err error) {
+func GetKeyedTransactor(client *ethclient.Client, increaseNonceFactor int) (transactor *bind.TransactOpts, err error) {
 	err = nil
 
 	pvtkey, err := crypto.HexToECDSA(os.Getenv("privatekey"))
