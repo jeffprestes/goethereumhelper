@@ -20,9 +20,9 @@ func GetCustomNetworkClient(URL string) (client *ethclient.Client, err error) {
 }
 
 /*
-GetCustomNetworkClient connects via websocket and return a client to user defined Ethereum network
+GetCustomNetworkClientWebsocket connects via websocket and return a client to user defined Ethereum network
 */
-func GetRinkebyClientWebsocket(URL string) (client *ethclient.Client, err error) {
+func GetCustomNetworkClientWebsocket(URL string) (client *ethclient.Client, err error) {
 	err = nil
 	client, err = ethclient.Dial(URL)
 	if err != nil {
