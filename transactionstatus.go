@@ -10,8 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-//WaitForTransctionProcessing check trx mining and return his results
-func WaitForTransctionProcessing(client *ethclient.Client, trx *types.Transaction, maxAttempts int, interval int) (txReceipt *types.Receipt, err error) {
+//WaitForTransactionProcessing check trx mining and return his results
+func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transaction, maxAttempts int, interval int) (txReceipt *types.Receipt, err error) {
 	var isPending = true
 	for isPending {
 		fmt.Print(".")
