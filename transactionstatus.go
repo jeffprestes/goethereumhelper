@@ -13,8 +13,21 @@ import (
 //WaitForTransactionProcessing check trx mining and return his results
 func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transaction, maxAttempts int, interval int) (txReceipt *types.Receipt, err error) {
 	var isPending = true
+	var ci int
 	for isPending {
-		fmt.Print(".")
+		var cs string
+		if ci == 0 {
+			cs = "|"
+		} else if ci == 1 {
+			cs = "/"
+		} else if ci == 2 {
+			cs = "-"
+		} else if ci == 3 {
+			ci = 0
+			cs = "|"
+		}
+		ci++
+		fmt.Print("\033[1D" + cs)
 		time.Sleep(time.Duration(interval) * time.Second)
 		_, isPending, err = client.TransactionByHash(context.Background(), trx.Hash())
 		if err != nil {
@@ -30,7 +43,7 @@ func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transacti
 			return
 		}
 	}
-	fmt.Print("\n")
+	fmt.Print("\033[1D")
 	txReceipt, err = client.TransactionReceipt(context.Background(), trx.Hash())
 	if err != nil {
 		log.Println("[WaitForTransctionProcessing] It was not possible to get add info category transaction receipt. Error: ", err.Error())
