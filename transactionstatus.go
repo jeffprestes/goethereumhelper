@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -27,7 +28,11 @@ func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transacti
 			cs = "|"
 		}
 		ci++
-		fmt.Print("\033[1D" + cs)
+		if runtime.GOOS == "windows" {
+			fmt.Print(".")
+		} else {
+			fmt.Print("\033[1D" + cs)
+		}
 		time.Sleep(time.Duration(interval) * time.Second)
 		_, isPending, err = client.TransactionByHash(context.Background(), trx.Hash())
 		if err != nil {
@@ -39,7 +44,8 @@ func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transacti
 		}
 		maxAttempts--
 		if maxAttempts == 0 {
-			log.Println("[WaitForTransctionProcessing] Attempts number exceeded max attempts limit. Error: ", err)
+			err = fmt.Errorf("Attempts number exceeded max attempts limit: %d", maxAttempts)
+			log.Println("[WaitForTransctionProcessing] Error: ", err)
 			return
 		}
 	}
