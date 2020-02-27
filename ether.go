@@ -14,7 +14,7 @@ import (
 )
 
 //SendEther an example that shows how to send ether from an account to another using Go (Golang)
-func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to common.Address, value int64) (trx *types.Transaction, err error) {
+func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to common.Address, value int64) (signedTx *types.Transaction, err error) {
 
 	publicKey := senderPrivateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
@@ -48,7 +48,7 @@ func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to 
 		return
 	}
 
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), senderPrivateKey)
+	signedTx, err = types.SignTx(tx, types.NewEIP155Signer(chainID), senderPrivateKey)
 	if err != nil {
 		log.Println("SignTx ", err)
 		return
