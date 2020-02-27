@@ -31,7 +31,7 @@ func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to 
 	}
 	// fmt.Println("from", fromAddress.Hex())
 
-	gasLimit := uint64(30000000000) // in units
+	gasLimit := uint64(3000000000) // in units
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		log.Println(err)
