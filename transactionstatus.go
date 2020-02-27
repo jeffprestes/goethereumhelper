@@ -99,7 +99,7 @@ func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts
 		maxAttempts--
 		if maxAttempts == 0 {
 			err = fmt.Errorf("Attempts number exceeded max attempts limit: %d", maxAttempts)
-			log.Println("[WaitForTransctionProcessing] Error: ", err)
+			log.Println("[WaitForTransctionProcessing] Error maxAttempts: ", err)
 			return
 		}
 	}
@@ -111,7 +111,7 @@ func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts
 	}
 	if txReceipt.Status < 1 {
 		err = fmt.Errorf("Transaction failed. Status: %d", txReceipt.Status)
-		log.Printf("[WaitForTransctionProcessing] %s\n", err.Error())
+		log.Printf("[WaitForTransctionProcessing] Status %s\n", err.Error())
 		return
 	}
 	return
