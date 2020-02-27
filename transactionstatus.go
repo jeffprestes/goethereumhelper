@@ -90,7 +90,7 @@ func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts
 		time.Sleep(time.Duration(interval) * time.Second)
 		_, isPending, err = client.TransactionByHash(context.Background(), trx)
 		if err != nil {
-			log.Println("[WaitForTransctionProcessing] Error checking if a transaction is mining pending. Error: ", err)
+			log.Println("[GetTransactionResult] Error checking if a transaction is mining pending. Error: ", err)
 			return
 		}
 		if !isPending {
@@ -99,19 +99,19 @@ func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts
 		maxAttempts--
 		if maxAttempts == 0 {
 			err = fmt.Errorf("Attempts number exceeded max attempts limit: %d", maxAttempts)
-			log.Println("[WaitForTransctionProcessing] Error maxAttempts: ", err)
+			log.Println("[GetTransactionResult] Error maxAttempts: ", err)
 			return
 		}
 	}
 	fmt.Print("\033[1D")
 	txReceipt, err = client.TransactionReceipt(context.Background(), trx)
 	if err != nil {
-		log.Println("[WaitForTransctionProcessing] It was not possible to get add info category transaction receipt. Error: ", err.Error())
+		log.Println("[GetTransactionResult] It was not possible to get add info category transaction receipt. Error: ", err.Error())
 		return
 	}
 	if txReceipt.Status < 1 {
 		err = fmt.Errorf("Transaction failed. Status: %d", txReceipt.Status)
-		log.Printf("[WaitForTransctionProcessing] Status %s\n", err.Error())
+		log.Printf("[GetTransactionResult] Status %s\n", err.Error())
 		return
 	}
 	return
