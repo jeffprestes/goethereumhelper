@@ -44,6 +44,17 @@ GetKeyedTransactor gets a keyed (signed?) transctor do perform a transaction wit
 func GetKeyedTransactor(client *ethclient.Client, increaseNonceFactor int) (transactor *bind.TransactOpts, err error) {
 	err = nil
 
+	transactor, err = GetKeyedTransactorWithValue(client, increaseNonceFactor, 0)
+
+	return
+}
+
+/*
+GetKeyedTransactorWithValue gets a keyed (signed?) transactor to perform a transaction within the Ethereum Blockchain
+*/
+func GetKeyedTransactorWithValue(client *ethclient.Client, increaseNonceFactor int, txValue int) (transactor *bind.TransactOpts, err error) {
+	err = nil
+
 	pvtkey, err := crypto.HexToECDSA(os.Getenv("privatekey"))
 	if err != nil {
 		log.Printf("[GetKeyedTransactor] Failue generating private key ECDSA: %+v", err)
@@ -72,7 +83,7 @@ func GetKeyedTransactor(client *ethclient.Client, increaseNonceFactor int) (tran
 	transactor = bind.NewKeyedTransactor(pvtkey)
 	transactor.GasLimit = uint64(6869310)
 	transactor.GasPrice = gasPrice.Mul(gasPrice, big.NewInt(2))
-	transactor.Value = big.NewInt(0)
+	transactor.Value = big.NewInt(int64(txValue))
 	transactor.Nonce = big.NewInt(int64(nonce))
 
 	return
