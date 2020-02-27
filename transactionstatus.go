@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -89,7 +90,7 @@ func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts
 		}
 		time.Sleep(time.Duration(interval) * time.Second)
 		_, isPending, err = client.TransactionByHash(context.Background(), trx)
-		if err != nil && err.Error() != "not found" {
+		if err != nil && strings.TrimSpace(err.Error()) != "not found" {
 			log.Println("[GetTransactionResult] Error checking if a transaction is mining pending. Error: ", err)
 			return
 		}
