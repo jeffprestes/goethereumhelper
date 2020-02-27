@@ -89,7 +89,7 @@ func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts
 		}
 		time.Sleep(time.Duration(interval) * time.Second)
 		_, isPending, err = client.TransactionByHash(context.Background(), trx)
-		if err != nil {
+		if err != nil && err.Error() != "not found" {
 			log.Println("[GetTransactionResult] Error checking if a transaction is mining pending. Error: ", err)
 			return
 		}
