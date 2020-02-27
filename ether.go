@@ -26,7 +26,7 @@ func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 	if err != nil {
-		log.Println(err)
+		log.Println("nonce ", err)
 		return
 	}
 	// fmt.Println("from", fromAddress.Hex())
@@ -34,7 +34,7 @@ func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to 
 	gasLimit := uint64(21000) // in units
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
-		log.Println(err)
+		log.Println("SuggestGasPrice ", err)
 		return
 	}
 
@@ -44,25 +44,25 @@ func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to 
 
 	chainID, err := client.ChainID(context.Background())
 	if err != nil {
-		log.Println(err)
+		log.Println("ChainID ", err)
 		return
 	}
 
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), senderPrivateKey)
 	if err != nil {
-		log.Println(err)
+		log.Println("SignTx ", err)
 		return
 	}
 
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
-		log.Println(err)
+		log.Println("SendTransaction ", err)
 		return
 	}
 
 	receipt, err = client.TransactionReceipt(context.Background(), signedTx.Hash())
 	if err != nil {
-		log.Println(err)
+		log.Println("TransactionReceipt ", err)
 		return
 	}
 	if receipt == nil {
