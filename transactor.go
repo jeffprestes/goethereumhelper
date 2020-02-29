@@ -72,7 +72,7 @@ func GetKeyedTransactorWithOptions(client *ethclient.Client, increaseNonceFactor
 		log.Printf("[GetKeyedTransactor] Failure when get nonce from the network: %+v", err)
 		return
 	}
-	nonce := basicNonce //+ uint64(increaseNonceFactor)
+	nonce := basicNonce + uint64(increaseNonceFactor)
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
