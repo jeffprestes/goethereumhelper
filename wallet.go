@@ -20,7 +20,7 @@ import (
 type KeystoreWallet struct {
 	Account  accounts.Account   // Single account contained in this wallet
 	Keystore *keystore.KeyStore // Keystore where the account originates from
-	Wallet accounts.Wallet 
+	Wallet   accounts.Wallet
 }
 
 //NewKeystoreWallet returns new instance of KeystoreWallet
@@ -36,7 +36,7 @@ func NewKeystoreWallet(ks *keystore.KeyStore, accountHex string) (ksw *KeystoreW
 		for _, acc := range w.Accounts() {
 			if acc.Address.Hash() == account.Address.Hash() {
 				ksw.Wallet = w
-				break				
+				break
 			}
 		}
 	}
@@ -105,7 +105,7 @@ func (w *KeystoreWallet) UpdateKeyedTransactor(transactor *bind.TransactOpts, cl
 // NewKeyStoreTransactor is a utility method to easily create a transaction signer from
 // an decrypted key from a keystore
 func (w *KeystoreWallet) NewKeyStoreTransactor(passphrase string) (*bind.TransactOpts, error) {
-	return &bind.TransactOpts	 {
+	return &bind.TransactOpts{
 		From: w.Account.Address,
 		Signer: func(signer types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 			if address != w.Account.Address {
@@ -118,4 +118,28 @@ func (w *KeystoreWallet) NewKeyStoreTransactor(passphrase string) (*bind.Transac
 			return tx.WithSignature(signer, signature)
 		},
 	}, nil
+}
+
+//GenerateSignedTxAsJSON generates a JSON signed raw Ethereum Transaction
+func (w *KeystoreWallet) GenerateSignedTxAsJSON(
+	txOpts *bind.TransactOpts,
+	passphrase string,
+	contractMethodParameters []byte,
+	smartContractAddress common.Address,
+	nonce, chainID uint64) (txJSON []byte, err error) {
+
+	tx := types.NewTransaction(nonce, smartContractAddress, big.NewInt(0), txOpts.GasLimit, txOpts.GasPrice, contractMethodParameters)
+
+	txSigned, err := w.SignTxWithPassphrase(passphrase, tx, big.NewInt(int64(chainID)))
+	if err != nil {
+		log.Fatalln("Erro obter o signer da conta", w.Account.Address.Hex(), err.Error())
+		return
+	}
+
+	txJSON, err = txSigned.MarshalJSON()
+	if err != nil {
+		log.Fatalln("Error serializing the transaction", err.Error())
+		return
+	}
+	return
 }
