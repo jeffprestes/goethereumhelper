@@ -21,7 +21,7 @@ func getMockAccountWithFunds(genesisAccount *bind.TransactOpts, backend *backend
 		return
 	}
 	tx := types.NewTransaction(uint64(genesisAccount.Nonce.Int64()), newAccount.From, big.NewInt(101000000000000), genesisAccount.GasLimit, genesisAccount.GasPrice, nil)
-	signedTx, err := genesisAccount.Signer(types.HomesteadSigner{}, genesisAccount.From, tx)
+	signedTx, err := genesisAccount.Signer(genesisAccount.From, tx)
 	if err != nil {
 		fmt.Printf("Houve falha ao assinar a transação para enviar ether a nova conta: %+v", err)
 		return

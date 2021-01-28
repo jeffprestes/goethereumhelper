@@ -23,7 +23,7 @@ type KeystoreWallet struct {
 	Wallet   accounts.Wallet
 }
 
-//NewKeystoreWallet returns new instance of KeystoreWallet
+// NewKeystoreWallet returns new instance of KeystoreWallet
 func NewKeystoreWallet(ks *keystore.KeyStore, accountHex string) (ksw *KeystoreWallet, err error) {
 	ksw = new(KeystoreWallet)
 	a1 := accounts.Account{}
@@ -69,7 +69,7 @@ func (w *KeystoreWallet) SignData(mimeType string, data []byte) ([]byte, error) 
 	return w.Keystore.SignHash(w.Account, crypto.Keccak256(data))
 }
 
-//GetNonceNumber gets actual nonce number of an Ethereum address/account
+// GetNonceNumber gets actual nonce number of an Ethereum address/account
 func (w *KeystoreWallet) GetNonceNumber(client *ethclient.Client) (nonce uint64, err error) {
 	err = nil
 	nonce, err = client.PendingNonceAt(context.Background(), w.Account.Address)
@@ -104,10 +104,12 @@ func (w *KeystoreWallet) UpdateKeyedTransactor(transactor *bind.TransactOpts, cl
 
 // NewKeyStoreTransactor is a utility method to easily create a transaction signer from
 // an decrypted key from a keystore
+// TODO: NewKeyedTransactor has been deprecated in favour of NewKeyedTransactorWithChainID
 func (w *KeystoreWallet) NewKeyStoreTransactor(passphrase string) (*bind.TransactOpts, error) {
+	signer := types.HomesteadSigner{}
 	return &bind.TransactOpts{
 		From: w.Account.Address,
-		Signer: func(signer types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
+		Signer: func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 			if address != w.Account.Address {
 				return nil, errors.New("not authorized to sign this account")
 			}
@@ -120,14 +122,13 @@ func (w *KeystoreWallet) NewKeyStoreTransactor(passphrase string) (*bind.Transac
 	}, nil
 }
 
-//GenerateSignedTxAsJSON generates a JSON signed raw Ethereum Transaction
+// GenerateSignedTxAsJSON generates a JSON signed raw Ethereum Transaction
 func (w *KeystoreWallet) GenerateSignedTxAsJSON(
 	txOpts *bind.TransactOpts,
 	passphrase string,
 	contractMethodParameters []byte,
 	smartContractAddress common.Address,
 	nonce, chainID uint64) (txJSON []byte, err error) {
-
 	tx := types.NewTransaction(nonce, smartContractAddress, big.NewInt(0), txOpts.GasLimit, txOpts.GasPrice, contractMethodParameters)
 
 	txSigned, err := w.SignTxWithPassphrase(passphrase, tx, big.NewInt(int64(chainID)))

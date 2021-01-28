@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-//GetMockBlockchain get a "in-memory" Blockchain instance
+// GetMockBlockchain get a "in-memory" Blockchain instance
 func GetMockBlockchain() (auth *bind.TransactOpts, backend *backends.SimulatedBackend, coinbaseAccountPrivateKey *ecdsa.PrivateKey) {
 	coinbaseAccountPrivateKey, _ = crypto.GenerateKey()
 	auth = bind.NewKeyedTransactor(coinbaseAccountPrivateKey)
