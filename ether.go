@@ -13,13 +13,24 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-//SendEther an example that shows how to send ether from an account to another using Go (Golang)
+// SendEther an example that shows how to send ether from an account to another using Go (Golang)
 func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to common.Address, value int64) (signedTx *types.Transaction, err error) {
-
 	publicKey := senderPrivateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
 		err = errors.New("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+		return
+	}
+
+	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		log.Println("chainID ", err)
+		return
+	}
+
+	latestEthBlockHeader, err := client.HeaderByNumber(context.Background(), nil)
+	if err != nil {
+		log.Println("latestEthBlockHeader ", err)
 		return
 	}
 
@@ -32,23 +43,33 @@ func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to 
 	// fmt.Println("from", fromAddress.Hex())
 
 	gasLimit := uint64(21000) // in units
-	gasPrice, err := client.SuggestGasPrice(context.Background())
+	// Use new EIP-1559
+	gasTip, err := client.SuggestGasTipCap(context.Background())
 	if err != nil {
-		log.Println("SuggestGasPrice ", err)
+		log.Println("gasTip ", err)
 		return
 	}
 
-	toAddress := to
+	maxGasFeeAccepted := new(big.Int).Add(
+		latestEthBlockHeader.BaseFee,
+		gasTip)
+
 	var data []byte
-	tx := types.NewTransaction(nonce, toAddress, big.NewInt(value), gasLimit, gasPrice, data)
 
-	chainID, err := client.ChainID(context.Background())
-	if err != nil {
-		log.Println("ChainID ", err)
-		return
+	eip1559Tx := types.DynamicFeeTx{
+		ChainID:   chainID,
+		Nonce:     nonce,
+		Gas:       gasLimit,
+		GasFeeCap: maxGasFeeAccepted,
+		GasTipCap: gasTip,
+		To:        &to,
+		Value:     big.NewInt(value),
+		Data:      data,
 	}
+	tx := types.NewTx(&eip1559Tx)
+	// tx := types.NewTransaction(nonce, toAddress, big.NewInt(value), gasLimit, gasPrice, data)
 
-	signedTx, err = types.SignTx(tx, types.NewEIP155Signer(chainID), senderPrivateKey)
+	signedTx, err = types.SignTx(tx, types.LatestSignerForChainID(chainID), senderPrivateKey)
 	if err != nil {
 		log.Println("SignTx ", err)
 		return
@@ -61,5 +82,5 @@ func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to 
 	}
 	return
 
-	//fmt.Printf("status: %v\n", receipt.Status) // status: 1
+	// fmt.Printf("status: %v\n", receipt.Status) // status: 1
 }
