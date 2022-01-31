@@ -84,19 +84,33 @@ UpdateKeyedTransactor updates a keyed (signed?) transctor do perform a transacti
 */
 func (w *KeystoreWallet) UpdateKeyedTransactor(transactor *bind.TransactOpts, client *ethclient.Client, increaseNonceFactor int, valueToSend int) (err error) {
 	err = nil
-	nonce, err := client.PendingNonceAt(context.Background(), transactor.From)
+	basicNonce, err := w.GetNonceNumber(client)
 	if err != nil {
-		log.Printf("[GetKeyedTransactor] Houve falha ao obter o nonce para o endereco %s da rede: %+v", transactor.From.String(), err)
+		log.Printf("[GetKeyedTransactor] Failure when get nonce from the network: %+v", err)
 		return
 	}
-	gasPrice, err := client.SuggestGasPrice(context.Background())
+	nonce := basicNonce + uint64(increaseNonceFactor)
+
+	latestEthBlockHeader, err := client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
-		log.Printf("[GetKeyedTransactor] Houve falha ao obter o preco sugerido de gas da rede: %+v", err)
+		log.Println("[GetKeyedTransactorWithOptions] Error getting the latest Eth Block Header: ", err.Error())
 		return
 	}
 
+	gasTip, err := client.SuggestGasTipCap(context.Background())
+	if err != nil {
+		log.Println("[GetKeyedTransactorWithOptions] Error getting SuggestGasTipCap: ", err.Error())
+		return
+	}
+
+	maxGasFeeAccepted := new(big.Int).Add(
+		latestEthBlockHeader.BaseFee,
+		gasTip)
+
 	transactor.GasLimit = uint64(6869310)
-	transactor.GasPrice = gasPrice.Mul(gasPrice, big.NewInt(2))
+	transactor.Context = context.Background()
+	transactor.GasFeeCap = maxGasFeeAccepted
+	transactor.GasTipCap = gasTip
 	transactor.Value = big.NewInt(int64(valueToSend))
 	transactor.Nonce = big.NewInt(int64(nonce))
 	return
@@ -104,25 +118,34 @@ func (w *KeystoreWallet) UpdateKeyedTransactor(transactor *bind.TransactOpts, cl
 
 // NewKeyStoreTransactor is a utility method to easily create a transaction signer from
 // an decrypted key from a keystore
-// TODO: NewKeyedTransactor has been deprecated in favour of NewKeyedTransactorWithChainID
-func (w *KeystoreWallet) NewKeyStoreTransactor(passphrase string) (*bind.TransactOpts, error) {
-	signer := types.HomesteadSigner{}
-	return &bind.TransactOpts{
-		From: w.Account.Address,
-		Signer: func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-			if address != w.Account.Address {
-				return nil, errors.New("not authorized to sign this account")
-			}
-			signature, err := w.Keystore.SignHashWithPassphrase(w.Account, passphrase, signer.Hash(tx).Bytes())
-			if err != nil {
-				return nil, err
-			}
-			return tx.WithSignature(signer, signature)
-		},
-	}, nil
+func (w *KeystoreWallet) NewKeyStoreTransactor(passphrase string, client *ethclient.Client) (*bind.TransactOpts, error) {
+	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		log.Println("[NewKeyStoreTransactor] Error getting chainID: ", err.Error())
+		return nil, err
+	}
+	signer := types.NewLondonSigner(chainID)
+	txOpts, err := bind.NewKeyStoreTransactorWithChainID(w.Keystore, w.Account, chainID)
+	if err != nil {
+		log.Println("[NewKeyStoreTransactor] Error generating NewKeyStoreTransactorWithChainID: ", err.Error())
+		return nil, err
+	}
+	txOpts.Signer = func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
+		if address != w.Account.Address {
+			return nil, errors.New("not authorized to sign this account")
+		}
+		signature, err := w.Keystore.SignHashWithPassphrase(w.Account, passphrase, signer.Hash(tx).Bytes())
+		if err != nil {
+			return nil, err
+		}
+		return tx.WithSignature(signer, signature)
+	}
+
+	return txOpts, nil
 }
 
 // GenerateSignedTxAsJSON generates a JSON signed raw Ethereum Transaction
+// TODO: Update to London fork
 func (w *KeystoreWallet) GenerateSignedTxAsJSON(
 	txOpts *bind.TransactOpts,
 	passphrase string,
