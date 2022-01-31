@@ -86,8 +86,8 @@ func GetKeyedTransactorWithOptions(client *ethclient.Client, increaseNonceFactor
 	pubkey := pvtkey.Public()
 	pubkeyECDSA, ok := pubkey.(*ecdsa.PublicKey)
 	if !ok {
-		err = errors.New("[GetKeyedTransactor] Failure obtaining (casting) ECDSA public key")
-		log.Printf(err.Error())
+		err = errors.New("[GetKeyedTransactorWithOptions] Failure obtaining (casting) ECDSA public key")
+		log.Println(err.Error())
 		return
 	}
 	basicNonce, err := GetNonceNumber(client, *pubkeyECDSA)
@@ -97,15 +97,37 @@ func GetKeyedTransactorWithOptions(client *ethclient.Client, increaseNonceFactor
 	}
 	nonce := basicNonce + uint64(increaseNonceFactor)
 
-	gasPrice, err := client.SuggestGasPrice(context.Background())
+	chainID, err := client.ChainID(context.Background())
 	if err != nil {
-		log.Printf("[GetKeyedTransactor] Failure getting gas price: %+v", err)
+		log.Println("[GetKeyedTransactorWithOptions] Error getting chainID: ", err.Error())
 		return
 	}
 
-	transactor = bind.NewKeyedTransactor(pvtkey)
+	latestEthBlockHeader, err := client.HeaderByNumber(context.Background(), nil)
+	if err != nil {
+		log.Println("[GetKeyedTransactorWithOptions] Error getting the latest Eth Block Header: ", err.Error())
+		return
+	}
+
+	gasTip, err := client.SuggestGasTipCap(context.Background())
+	if err != nil {
+		log.Println("[GetKeyedTransactorWithOptions] Error getting SuggestGasTipCap: ", err.Error())
+		return
+	}
+
+	maxGasFeeAccepted := new(big.Int).Add(
+		latestEthBlockHeader.BaseFee,
+		gasTip)
+
+	transactor, err = bind.NewKeyedTransactorWithChainID(pvtkey, chainID)
+	if err != nil {
+		log.Println("[GetKeyedTransactor] Error generating NewKeyedTransactorWithChainID:", err.Error())
+		return
+	}
 	transactor.GasLimit = uint64(6869310)
-	transactor.GasPrice = gasPrice.Mul(gasPrice, big.NewInt(2))
+	transactor.Context = context.Background()
+	transactor.GasFeeCap = maxGasFeeAccepted
+	transactor.GasTipCap = gasTip
 	transactor.Value = big.NewInt(int64(txValue))
 	transactor.Nonce = big.NewInt(int64(nonce))
 
