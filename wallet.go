@@ -3,6 +3,7 @@ package goethereumhelper
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math/big"
 
@@ -79,6 +80,33 @@ func (w *KeystoreWallet) GetNonceNumber(client *ethclient.Client) (nonce uint64,
 	return
 }
 
+func (w *KeystoreWallet) SwitchAccount(accountHex string) (err error) {
+	err = nil
+	a1 := accounts.Account{}
+	a1.Address = common.HexToAddress(accountHex)
+	account, err := w.Keystore.Find(a1)
+	if err != nil {
+		err = fmt.Errorf("NewKeystoreWallet - SwitchAccount - Account: %s not found in keystore. Error: %s", accountHex, err.Error())
+		return
+	}
+	var accountFound bool
+	for _, wallet := range w.Keystore.Wallets() {
+		for _, acc := range wallet.Accounts() {
+			if acc.Address.Hash() == account.Address.Hash() {
+				w.Wallet = wallet
+				accountFound = true
+				break
+			}
+		}
+	}
+	if !accountFound {
+		err = fmt.Errorf("NewKeystoreWallet - SwitchAccount - Account: %s not found in wallets. Error: %s", accountHex, err.Error())
+		return
+	}
+	w.Account = account
+	return
+}
+
 /*
 UpdateKeyedTransactor updates a keyed (signed?) transctor do perform a transaction within a Simulated Ethereum Blockchain
 */
@@ -151,7 +179,8 @@ func (w *KeystoreWallet) GenerateSignedTxAsJSON(
 	passphrase string,
 	contractMethodParameters []byte,
 	smartContractAddress common.Address,
-	nonce, chainID uint64) (txJSON []byte, err error) {
+	nonce, chainID uint64,
+) (txJSON []byte, err error) {
 	tx := types.NewTransaction(nonce, smartContractAddress, big.NewInt(0), txOpts.GasLimit, txOpts.GasPrice, contractMethodParameters)
 
 	txSigned, err := w.SignTxWithPassphrase(passphrase, tx, big.NewInt(int64(chainID)))
