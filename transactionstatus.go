@@ -14,9 +14,9 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-//WaitForTransactionProcessing check trx mining and return his results
+// WaitForTransactionProcessing check trx mining and return his results
 func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transaction, maxAttempts int, interval int) (txReceipt *types.Receipt, err error) {
-	var isPending = true
+	isPending := true
 	var ci int
 	for isPending {
 		var cs string
@@ -66,9 +66,9 @@ func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transacti
 	return
 }
 
-//GetTransactionResult check trx mining and return his results
+// GetTransactionResult check trx mining and return his results
 func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts int, interval int) (txReceipt *types.Receipt, err error) {
-	var isPending = true
+	isPending := true
 	var ci int
 	for isPending {
 		var cs string
@@ -107,7 +107,7 @@ func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts
 	fmt.Print("\033[1D")
 	txReceipt, err = client.TransactionReceipt(context.Background(), trx)
 	if err != nil {
-		log.Println("[GetTransactionResult] It was not possible to get add info category transaction receipt. Error: ", err.Error())
+		log.Println("[GetTransactionResult] It was not possible to get ", trx.String(), "transaction receipt. Error: ", err.Error())
 		return
 	}
 	if txReceipt.Status < 1 {
