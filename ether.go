@@ -13,40 +13,31 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// SendEther an example that shows how to send ether from an account to another using Go (Golang)
-func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to common.Address, value int64) (signedTx *types.Transaction, err error) {
-	publicKey := senderPrivateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		err = errors.New("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
-		return
-	}
-
+// SendEtherUsingKeystoreWallet an example that shows how to send ether using an account from KeystoreWallet to another using Go (Golang)
+func SendEtherUsingKeystoreWallet(client *ethclient.Client, sender KeystoreWallet, to common.Address, value int64) (signedTx *types.Transaction, err error) {
 	chainID, err := client.ChainID(context.Background())
 	if err != nil {
-		log.Println("chainID ", err)
+		log.Println("SendEtherUsingKeystoreWallet - Error getting chainID ", err)
 		return
 	}
 
 	latestEthBlockHeader, err := client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
-		log.Println("latestEthBlockHeader ", err)
+		log.Println("SendEtherUsingKeystoreWallet - Error gettin the latest Eth Block Header ", err)
 		return
 	}
 
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	nonce, err := client.PendingNonceAt(context.Background(), sender.Account.Address)
 	if err != nil {
-		log.Println("nonce ", err)
+		log.Println("SendEtherUsingKeystoreWallet - Error getting nonce ", err)
 		return
 	}
-	// fmt.Println("from", fromAddress.Hex())
 
 	gasLimit := uint64(21000) // in units
 	// Use new EIP-1559
 	gasTip, err := client.SuggestGasTipCap(context.Background())
 	if err != nil {
-		log.Println("gasTip ", err)
+		log.Println("SendEtherUsingKeystoreWallet - Error getting Blockchain suggested gasTip ", err)
 		return
 	}
 
@@ -67,20 +58,85 @@ func SendEther(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to 
 		Data:      data,
 	}
 	tx := types.NewTx(&eip1559Tx)
-	// tx := types.NewTransaction(nonce, toAddress, big.NewInt(value), gasLimit, gasPrice, data)
 
-	signedTx, err = types.SignTx(tx, types.LatestSignerForChainID(chainID), senderPrivateKey)
+	signedTx, err = sender.Wallet.SignTx(sender.Account, tx, chainID)
 	if err != nil {
-		log.Println("SignTx ", err)
+		log.Println("SendEtherUsingKeystoreWallet - Error Signing Transaction ", err)
 		return
 	}
 
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
-		log.Println("SendTransaction ", err)
+		log.Println("SendEtherUsingKeystoreWallet - Error sending Transaction ", err)
 		return
 	}
 	return
+}
 
-	// fmt.Printf("status: %v\n", receipt.Status) // status: 1
+// SendEtherUsingPrivateKey an example that shows how to send ether using private key from an account to another using Go (Golang)
+func SendEtherUsingPrivateKey(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to common.Address, value int64) (signedTx *types.Transaction, err error) {
+	publicKey := senderPrivateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		err = errors.New("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+		return
+	}
+
+	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		log.Println("SendEtherUsingPrivateKey - Error getting chainID ", err)
+		return
+	}
+
+	latestEthBlockHeader, err := client.HeaderByNumber(context.Background(), nil)
+	if err != nil {
+		log.Println("SendEtherUsingPrivateKey - Error gettin the latest Eth Block Header ", err)
+		return
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Println("SendEtherUsingPrivateKey - Error getting nonce ", err)
+		return
+	}
+
+	gasLimit := uint64(21000) // in units
+	// Use new EIP-1559
+	gasTip, err := client.SuggestGasTipCap(context.Background())
+	if err != nil {
+		log.Println("SendEtherUsingPrivateKey - Error getting Blockchain suggested gasTip ", err)
+		return
+	}
+
+	maxGasFeeAccepted := new(big.Int).Add(
+		latestEthBlockHeader.BaseFee,
+		gasTip)
+
+	var data []byte
+
+	eip1559Tx := types.DynamicFeeTx{
+		ChainID:   chainID,
+		Nonce:     nonce,
+		Gas:       gasLimit,
+		GasFeeCap: maxGasFeeAccepted,
+		GasTipCap: gasTip,
+		To:        &to,
+		Value:     big.NewInt(value),
+		Data:      data,
+	}
+	tx := types.NewTx(&eip1559Tx)
+
+	signedTx, err = types.SignTx(tx, types.LatestSignerForChainID(chainID), senderPrivateKey)
+	if err != nil {
+		log.Println("SendEtherUsingPrivateKey - Error Signing Transaction ", err)
+		return
+	}
+
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		log.Println("SendEtherUsingPrivateKey - Error sending Transaction ", err)
+		return
+	}
+	return
 }
