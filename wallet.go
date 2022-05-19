@@ -25,13 +25,13 @@ type KeystoreWallet struct {
 }
 
 // NewKeystoreWallet returns new instance of KeystoreWallet
-func NewKeystoreWallet(ks *keystore.KeyStore, accountHex string) (ksw *KeystoreWallet, err error) {
+func NewKeystoreWallet(ks *keystore.KeyStore, accountHex, keystorePassphrase string) (ksw *KeystoreWallet, err error) {
 	ksw = new(KeystoreWallet)
 	a1 := accounts.Account{}
 	a1.Address = common.HexToAddress(accountHex)
 	account, err := ks.Find(a1)
 	if err != nil {
-		log.Fatalln("NewKeystoreWallet - Conta não existente na keystore", err.Error())
+		log.Fatalln("NewKeystoreWallet - Account not found within keystore", err.Error())
 	}
 	for _, w := range ks.Wallets() {
 		for _, acc := range w.Accounts() {
@@ -40,6 +40,10 @@ func NewKeystoreWallet(ks *keystore.KeyStore, accountHex string) (ksw *KeystoreW
 				break
 			}
 		}
+	}
+	err = ks.Unlock(account, keystorePassphrase)
+	if err != nil {
+		log.Fatalln("NewKeystoreWallet - ", account.Address.Hex(), " could not be unlock: ", err.Error())
 	}
 	ksw.Keystore = ks
 	ksw.Account = account
@@ -80,7 +84,7 @@ func (w *KeystoreWallet) GetNonceNumber(client *ethclient.Client) (nonce uint64,
 	return
 }
 
-func (w *KeystoreWallet) SwitchAccount(accountHex string) (err error) {
+func (w *KeystoreWallet) SwitchAccount(accountHex, keystorePassphrase string) (err error) {
 	err = nil
 	a1 := accounts.Account{}
 	a1.Address = common.HexToAddress(accountHex)
@@ -104,6 +108,11 @@ func (w *KeystoreWallet) SwitchAccount(accountHex string) (err error) {
 		return
 	}
 	w.Account = account
+
+	err = w.Keystore.Unlock(account, keystorePassphrase)
+	if err != nil {
+		log.Fatalln("NewKeystoreWallet - ", account.Address.Hex(), " could not be unlock: ", err.Error())
+	}
 	return
 }
 
