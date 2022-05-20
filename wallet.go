@@ -74,6 +74,11 @@ func (w *KeystoreWallet) SignData(mimeType string, data []byte) ([]byte, error) 
 	return w.Keystore.SignHash(w.Account, crypto.Keccak256(data))
 }
 
+// SignTx signs a transaction using the selected account in the keystore. Important: the account must be unlocked.
+func (w *KeystoreWallet) SignTx(tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
+	return w.Keystore.SignTx(w.Account, tx, chainID)
+}
+
 // GetNonceNumber gets actual nonce number of an Ethereum address/account
 func (w *KeystoreWallet) GetNonceNumber(client *ethclient.Client) (nonce uint64, err error) {
 	err = nil
