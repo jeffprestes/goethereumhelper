@@ -11,51 +11,40 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 /*
-UpdateKeyedTransactorWithClient updates a keyed (signed?) transctor using Ethereum client to perform a transaction within a Simulated Ethereum Blockchain
+UpdateKeyedTransactor updates a keyed (signed?) transctor using Ethereum client to perform a transaction within Ethereum Blockchain
 */
-func UpdateKeyedTransactorWithClient(transactor *bind.TransactOpts, client *ethclient.Client, increaseNonceFactor int, valueToSend int) (err error) {
+func UpdateKeyedTransactor(transactor *bind.TransactOpts, client *ethclient.Client, increaseNonceFactor int, valueToSend int) (err error) {
 	err = nil
 	nonce, err := client.PendingNonceAt(context.Background(), transactor.From)
 	if err != nil {
 		log.Printf("[GetKeyedTransactor] Houve falha ao obter o nonce para o endereco %s da rede: %+v", transactor.From.String(), err)
 		return
 	}
-	gasPrice, err := client.SuggestGasPrice(context.Background())
+
+	latestEthBlockHeader, err := client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
-		log.Printf("[GetKeyedTransactor] Houve falha ao obter o preco sugerido de gas da rede: %+v", err)
+		log.Println("[GetKeyedTransactorWithOptions] Error getting the latest Eth Block Header: ", err.Error())
 		return
 	}
 
+	gasTip, err := client.SuggestGasTipCap(context.Background())
+	if err != nil {
+		log.Println("[GetKeyedTransactorWithOptions] Error getting SuggestGasTipCap: ", err.Error())
+		return
+	}
+
+	maxGasFeeAccepted := new(big.Int).Add(
+		latestEthBlockHeader.BaseFee,
+		gasTip)
+
+	transactor.Context = context.Background()
+	transactor.GasFeeCap = maxGasFeeAccepted
+	transactor.GasTipCap = gasTip
 	transactor.GasLimit = uint64(6869310)
-	transactor.GasPrice = gasPrice.Mul(gasPrice, big.NewInt(2))
-	transactor.Value = big.NewInt(int64(valueToSend))
-	transactor.Nonce = big.NewInt(int64(nonce))
-	return
-}
-
-/*
-UpdateKeyedTransactor updates a keyed (signed?) transctor do perform a transaction within a Simulated Ethereum Blockchain
-*/
-func UpdateKeyedTransactor(transactor *bind.TransactOpts, backend *backends.SimulatedBackend, increaseNonceFactor int, valueToSend int) (err error) {
-	err = nil
-	nonce, err := backend.PendingNonceAt(context.Background(), transactor.From)
-	if err != nil {
-		log.Printf("[GetKeyedTransactor] Houve falha ao obter o nonce para o endereco %s da rede: %+v", transactor.From.String(), err)
-		return
-	}
-	gasPrice, err := backend.SuggestGasPrice(context.Background())
-	if err != nil {
-		log.Printf("[GetKeyedTransactor] Houve falha ao obter o preco sugerido de gas da rede: %+v", err)
-		return
-	}
-
-	transactor.GasLimit = uint64(6869310)
-	transactor.GasPrice = gasPrice.Mul(gasPrice, big.NewInt(2))
 	transactor.Value = big.NewInt(int64(valueToSend))
 	transactor.Nonce = big.NewInt(int64(nonce))
 	return
