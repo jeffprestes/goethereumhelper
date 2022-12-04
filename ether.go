@@ -73,8 +73,13 @@ func SendEtherUsingKeystoreWallet(client *ethclient.Client, sender KeystoreWalle
 	return
 }
 
-// SendEtherUsingPrivateKey an example that shows how to send ether using private key from an account to another using Go (Golang)
 func SendEtherUsingPrivateKey(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to common.Address, value int64) (signedTx *types.Transaction, err error) {
+	signedTx, err = SendEtherUsingPrivateKeyGasTipFactor(client, senderPrivateKey, to, 1, value)
+	return
+}
+
+// SendEtherUsingPrivateKeyGasTipFactor an example that shows how to send ether using private key from an account to another using Go (Golang) with GasTip price factor
+func SendEtherUsingPrivateKeyGasTipFactor(client *ethclient.Client, senderPrivateKey *ecdsa.PrivateKey, to common.Address, gasTipFactor int64, value int64) (signedTx *types.Transaction, err error) {
 	publicKey := senderPrivateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
@@ -108,6 +113,8 @@ func SendEtherUsingPrivateKey(client *ethclient.Client, senderPrivateKey *ecdsa.
 		log.Println("SendEtherUsingPrivateKey - Error getting Blockchain suggested gasTip ", err)
 		return
 	}
+
+	gasTip = gasTip.Mul(gasTip, big.NewInt(gasTipFactor))
 
 	maxGasFeeAccepted := new(big.Int).Add(
 		latestEthBlockHeader.BaseFee,
