@@ -39,6 +39,7 @@ func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transacti
 		time.Sleep(time.Duration(interval) * time.Second)
 		_, isPending, err = client.TransactionByHash(context.Background(), trx.Hash())
 		if err != nil {
+			err = fmt.Errorf("error getting Tx data by hash: %s", err.Error())
 			log.Println("[WaitForTransctionProcessing] Error checking if a transaction is mining pending. Error: ", err)
 			return
 		}
@@ -47,7 +48,7 @@ func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transacti
 		}
 		maxAttempts--
 		if maxAttempts == 0 {
-			err = fmt.Errorf("Attempts number exceeded max attempts limit: %d", maxAttempts)
+			err = fmt.Errorf("attempts number exceeded max attempts limit: %d", maxAttempts)
 			log.Println("[WaitForTransctionProcessing] Error: ", err)
 			return
 		}
@@ -55,11 +56,12 @@ func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transacti
 	fmt.Print("\033[1D")
 	txReceipt, err = client.TransactionReceipt(context.Background(), trx.Hash())
 	if err != nil {
+		err = fmt.Errorf("error getting Tx Receipt: %s", err.Error())
 		log.Println("[WaitForTransctionProcessing] It was not possible to get add info category transaction receipt. Error: ", err.Error())
 		return
 	}
 	if txReceipt.Status < 1 {
-		err = fmt.Errorf("Transaction failed. Status: %d", txReceipt.Status)
+		err = fmt.Errorf("transaction failed. Status: %d", txReceipt.Status)
 		log.Printf("[WaitForTransctionProcessing] %s\n", err.Error())
 		return
 	}
@@ -99,7 +101,7 @@ func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts
 		}
 		maxAttempts--
 		if maxAttempts == 0 {
-			err = fmt.Errorf("Attempts number exceeded max attempts limit: %d", maxAttempts)
+			err = fmt.Errorf("attempts number exceeded max attempts limit: %d", maxAttempts)
 			log.Println("[GetTransactionResult] Error maxAttempts: ", err)
 			return
 		}
@@ -111,7 +113,7 @@ func GetTransactionResult(client *ethclient.Client, trx common.Hash, maxAttempts
 		return
 	}
 	if txReceipt.Status < 1 {
-		err = fmt.Errorf("Transaction failed. Status: %d", txReceipt.Status)
+		err = fmt.Errorf("transaction failed. Status: %d", txReceipt.Status)
 		log.Printf("[GetTransactionResult] Status %s\n", err.Error())
 		return
 	}
