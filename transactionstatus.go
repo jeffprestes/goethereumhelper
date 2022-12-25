@@ -44,8 +44,22 @@ func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transacti
 			return
 		}
 		if !isPending {
-			break
+			txReceipt, err = client.TransactionReceipt(context.Background(), trx.Hash())
+			if err != nil {
+				// In case the node is outdate and have not received the transaction yet
+				if !strings.Contains(err.Error(), "not found") {
+					err = fmt.Errorf("error getting Tx Receipt: %s", err.Error())
+					log.Println("[WaitForTransctionProcessing] It was not possible to get add info category transaction receipt. Error: ", err.Error())
+					return
+				} else {
+					isPending = true
+				}
+			}
+			if !isPending {
+				break
+			}
 		}
+
 		maxAttempts--
 		if maxAttempts == 0 {
 			err = fmt.Errorf("attempts number exceeded max attempts limit: %d", maxAttempts)
@@ -54,14 +68,9 @@ func WaitForTransactionProcessing(client *ethclient.Client, trx *types.Transacti
 		}
 	}
 	fmt.Print("\033[1D")
-	txReceipt, err = client.TransactionReceipt(context.Background(), trx.Hash())
-	if err != nil {
-		err = fmt.Errorf("error getting Tx Receipt: %s", err.Error())
-		log.Println("[WaitForTransctionProcessing] It was not possible to get add info category transaction receipt. Error: ", err.Error())
-		return
-	}
+
 	if txReceipt.Status < 1 {
-		err = fmt.Errorf("transaction failed. Status: %d", txReceipt.Status)
+		err = fmt.Errorf("transaction in blockchain failed. Status: %d", txReceipt.Status)
 		log.Printf("[WaitForTransctionProcessing] %s\n", err.Error())
 		return
 	}
