@@ -10,11 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-//SubLogs Subscribe to watch to notifications to a specific Ethereum address
+// SubLogs Subscribe to watch to notifications to a specific Ethereum address
 func SubLogs(addressToWatch common.Address, wg *sync.WaitGroup) {
 	log.Println("[SubLogs] Waiting network confirmation to address ", addressToWatch.String(), " ...")
 	defer wg.Done()
-	wsClient, err := GetRinkebyClientWebsocket()
+	wsClient, err := GetCustomNetworkClientWebsocket("<<put in here your EVM Node URL>>")
 	if err != nil {
 		log.Printf("[SubLogs] Houve falha ao conectar via WS na rede Rinkeby: %+v", err)
 		return
